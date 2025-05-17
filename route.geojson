@@ -1,0 +1,175 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "calculated_at": "2025-05-17T10:10:22.051343",
+        "point_count": 5,
+        "start_place": "Eiffel Tower",
+        "end_place": "Sacr\u00e9-C\u0153ur Basilica"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            2.2945,
+            48.8584
+          ],
+          [
+            2.295,
+            48.8738
+          ],
+          [
+            2.3376,
+            48.8606
+          ],
+          [
+            2.3499,
+            48.853
+          ],
+          [
+            2.3431,
+            48.8867
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "calculated_at": "2025-05-17T10:10:26.485124",
+        "point_count": 5,
+        "start_place": "Louvre Museum",
+        "end_place": "Eiffel Tower"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            2.3376,
+            48.8606
+          ],
+          [
+            2.3499,
+            48.853
+          ],
+          [
+            2.3431,
+            48.8867
+          ],
+          [
+            2.295,
+            48.8738
+          ],
+          [
+            2.2945,
+            48.8584
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "calculated_at": "2025-05-17T10:10:30.269143",
+        "point_count": 5,
+        "start_place": "Notre-Dame Cathedral",
+        "end_place": "Eiffel Tower"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            2.3499,
+            48.853
+          ],
+          [
+            2.3376,
+            48.8606
+          ],
+          [
+            2.3431,
+            48.8867
+          ],
+          [
+            2.295,
+            48.8738
+          ],
+          [
+            2.2945,
+            48.8584
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "calculated_at": "2025-05-17T10:10:34.381016",
+        "point_count": 5,
+        "start_place": "Arc de Triomphe",
+        "end_place": "Sacr\u00e9-C\u0153ur Basilica"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            2.295,
+            48.8738
+          ],
+          [
+            2.2945,
+            48.8584
+          ],
+          [
+            2.3376,
+            48.8606
+          ],
+          [
+            2.3499,
+            48.853
+          ],
+          [
+            2.3431,
+            48.8867
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "calculated_at": "2025-05-17T10:10:39.036925",
+        "point_count": 5,
+        "start_place": "Sacr\u00e9-C\u0153ur Basilica",
+        "end_place": "Arc de Triomphe"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            2.3431,
+            48.8867
+          ],
+          [
+            2.3376,
+            48.8606
+          ],
+          [
+            2.3499,
+            48.853
+          ],
+          [
+            2.2945,
+            48.8584
+          ],
+          [
+            2.295,
+            48.8738
+          ]
+        ]
+      }
+    }
+  ]
+}

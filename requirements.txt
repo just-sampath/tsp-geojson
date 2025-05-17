@@ -1,0 +1,10 @@
+# This file is for Python package dependencies.
+# Add any required libraries here, one per line.
+# For example:
+# pandas>=1.0.0
+# numpy
+# matplotlib
+
+# Currently, this project uses only standard Python libraries or self-implemented functions.
+# If you use the `haversine` library (pip install haversine) for distance.py, add:
+# haversine 
