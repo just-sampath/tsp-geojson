@@ -5,20 +5,39 @@ import sys
 import os
 import datetime
 
+# Try to import matplotlib, but don't make it a hard requirement if --plot is not used.
+try:
+    import matplotlib.pyplot as plt
+    MATPLOTLIB_AVAILABLE = True
+    try:
+        import seaborn as sns
+        SEABORN_AVAILABLE = True
+    except ImportError:
+        SEABORN_AVAILABLE = False
+except ImportError:
+    MATPLOTLIB_AVAILABLE = False
+    SEABORN_AVAILABLE = False
+
 from distance import Place, calculate_distance_matrix
-from tsp_solver import solve_tsp_greedy, solve_tsp_2opt
+from tsp_solver import solve_tsp_greedy, solve_tsp_2opt, solve_tsp_simulated_annealing
 
 DEFAULT_INPUT_CSV = "places.csv"
 DEFAULT_OUTPUT_GEOJSON = "route.geojson"
+DEFAULT_PLOT_FILENAME = "tour_plot.png"
 
 def read_places_from_csv(csv_filepath: str) -> list[Place]:
-    """Reads place data from a CSV file."""
     places = []
     try:
         with open(csv_filepath, 'r', encoding='utf-8') as file:
             reader = csv.DictReader(file)
-            if not reader.fieldnames or not all(f in reader.fieldnames for f in ['Name', 'Lat', 'Lon']):
-                 raise ValueError(f"CSV file '{csv_filepath}' must have 'Name', 'Lat', 'Lon' columns.")
+            # Expected columns: Name, Lat, Lon. Optional: Open, Close
+            required_cols = ['Name', 'Lat', 'Lon']
+            if not reader.fieldnames or not all(f in reader.fieldnames for f in required_cols):
+                 raise ValueError(f"CSV file '{csv_filepath}' must have at least 'Name', 'Lat', 'Lon' columns.")
+            
+            has_open_time = "Open" in reader.fieldnames
+            has_close_time = "Close" in reader.fieldnames
+
             for row_num, row in enumerate(reader, 1):
                 try:
                     name = row['Name'].strip()
@@ -26,11 +45,32 @@ def read_places_from_csv(csv_filepath: str) -> list[Place]:
                     lon = float(row['Lon'])
                     if not name:
                         raise ValueError(f"Place name cannot be empty (row {row_num} in '{csv_filepath}').")
-                    places.append(Place(name, lat, lon))
+                    
+                    open_time_val = None
+                    if has_open_time and row["Open"] and row["Open"].strip():
+                        try:
+                            open_time_val = float(row["Open"])
+                        except ValueError:
+                            raise ValueError(f"Invalid format for 'Open' time (row {row_num}): '{row['Open']}'. Must be a number (hours).")
+
+                    close_time_val = None
+                    if has_close_time and row["Close"] and row["Close"].strip():
+                        try:
+                            close_time_val = float(row["Close"])
+                        except ValueError:
+                            raise ValueError(f"Invalid format for 'Close' time (row {row_num}): '{row['Close']}'. Must be a number (hours).")
+
+                    if open_time_val is not None and close_time_val is not None and open_time_val >= close_time_val:
+                        raise ValueError(f"'Open' time ({open_time_val}) must be before 'Close' time ({close_time_val}) (row {row_num}).")
+
+                    places.append(Place(name, lat, lon, open_time_val, close_time_val))
                 except ValueError as e:
-                    raise ValueError(f"Error parsing row {row_num} in CSV '{csv_filepath}': {row}. Details: {e}")
+                    if f"(row {row_num})" not in str(e):
+                         raise ValueError(f"Error parsing row {row_num} in CSV '{csv_filepath}': {row}. Details: {e}")
+                    else:
+                        raise
                 except KeyError as e:
-                    raise ValueError(f"Missing column {e} in CSV row {row_num} in '{csv_filepath}': {row}. Ensure 'Name', 'Lat', 'Lon' columns exist.")
+                    raise ValueError(f"Missing column {e} in CSV row {row_num} in '{csv_filepath}'.")
     except FileNotFoundError:
         raise FileNotFoundError(f"Error: CSV file not found at '{csv_filepath}'")
     except Exception as e:
@@ -104,6 +144,71 @@ def write_route_to_geojson(route_places: list[Place], output_filepath: str) -> N
     except Exception as e:
         print(f"An unexpected error occurred while writing GeoJSON: {e}", file=sys.stderr)
 
+def plot_tour(places_in_tour: list[Place], output_plot_filepath: str):
+    if not MATPLOTLIB_AVAILABLE:
+        print("Matplotlib is not installed. Skipping plot generation. Please install it with: pip install matplotlib", file=sys.stderr)
+        return
+
+    if SEABORN_AVAILABLE:
+        sns.set_theme(style="whitegrid", palette="pastel")
+    else:
+        print("Seaborn not found. Using default Matplotlib styling. For enhanced visuals, install Seaborn: pip install seaborn", file=sys.stderr)
+
+    if not places_in_tour:
+        print("No places in the tour to plot.", file=sys.stderr)
+        return
+
+    lats = [p.lat for p in places_in_tour]
+    lons = [p.lon for p in places_in_tour]
+    names = [p.name for p in places_in_tour]
+
+    plt.figure(figsize=(10, 8))
+    
+    annotation_offset = 0.0003
+
+    unique_lons = [p.lon for p in dict.fromkeys(places_in_tour)]
+    unique_lats = [p.lat for p in dict.fromkeys(places_in_tour)]
+    plt.scatter(unique_lons, unique_lats, c='blue', label='Cities', zorder=2)
+
+    for i, p_tour in enumerate(places_in_tour):
+        plt.text(p_tour.lon + annotation_offset, 
+                 p_tour.lat + annotation_offset, 
+                 f"{i+1}. {p_tour.name}", 
+                 fontsize=9, zorder=4)
+
+    if len(places_in_tour) > 1:
+        for i in range(len(places_in_tour) - 1):
+            p1 = places_in_tour[i]
+            p2 = places_in_tour[i+1]
+            if p1.lat == p2.lat and p1.lon == p2.lon:
+                continue
+            plt.arrow(p1.lon, p1.lat, p2.lon - p1.lon, p2.lat - p1.lat,
+                      width=0.00010,
+                      head_width=0.0004,
+                      head_length=0.0007,
+                      fc='dimgray', ec='dimgray', 
+                      length_includes_head=True, 
+                      zorder=1)
+    
+    if places_in_tour:
+        plt.scatter([lons[0]], [lats[0]], 
+                    c='green', s=120, label='Start Point', 
+                    marker='*', zorder=3, edgecolors='black')
+
+    plt.xlabel("Longitude")
+    plt.ylabel("Latitude")
+    plt.title("Tour Route")
+    plt.legend()
+    plt.grid(True)
+    plt.axis('equal')
+    plt.tight_layout()
+    
+    try:
+        plt.savefig(output_plot_filepath)
+        print(f"Tour plot saved to {output_plot_filepath}")
+    except Exception as e:
+        print(f"Error saving plot to '{output_plot_filepath}': {e}", file=sys.stderr)
+
 def main():
     parser = argparse.ArgumentParser(
         description="Travelling Salesman City-Tour Optimizer. Interactively prompts for start city if not a single city.",
@@ -124,18 +229,44 @@ def main():
     parser.add_argument(
         "--algo",
         type=str,
-        choices=["greedy", "2opt"],
+        choices=["greedy", "2opt", "simulated-annealing"],
         default="2opt",
-        help="TSP algorithm to use: 'greedy' or '2opt'.\nDefault: '2opt'."
+        help="TSP algorithm to use: 'greedy', '2opt', or 'simulated-annealing'.\nDefault: '2opt'."
     )
     parser.add_argument(
         "--output",
         type=str,
         default=DEFAULT_OUTPUT_GEOJSON,
-        help=f"Path to save the GeoJSON route. If file exists, new routes are added.\nDefault: '{DEFAULT_OUTPUT_GEOJSON}'."
+        help=f"Path to save the GeoJSON route. If file exists, new routes are added.\\nDefault: '{DEFAULT_OUTPUT_GEOJSON}'."
+    )
+    parser.add_argument(
+        "--plot",
+        action="store_true",
+        help=f"Generate a scatter plot of the tour and save it to '{DEFAULT_PLOT_FILENAME}'. Requires Matplotlib."
+    )
+    parser.add_argument(
+        "--plot-output",
+        type=str,
+        default=DEFAULT_PLOT_FILENAME,
+        help=f"Filename for the output plot. Default: '{DEFAULT_PLOT_FILENAME}'."
+    )
+    parser.add_argument(
+        "--speed",
+        type=float,
+        default=40.0,
+        help="Average travel speed in km/h for time window calculations. Default: 40.0 km/h."
+    )
+    parser.add_argument(
+        "--enforce-time-windows",
+        action="store_true",
+        help="Enforce time windows specified in the CSV (Open, Close columns). \\nCurrently only respected by the 'greedy' algorithm. \\nOther algorithms will ignore time windows but a warning will be issued."
     )
 
     args = parser.parse_args()
+
+    if args.plot and not MATPLOTLIB_AVAILABLE:
+        print("Error: --plot was specified, but Matplotlib is not installed. Please install it: pip install matplotlib", file=sys.stderr)
+        sys.exit(1)
 
     try:
         places = read_places_from_csv(args.csv)
@@ -211,6 +342,8 @@ def main():
         print(f"Total distance: {total_distance:.2f} km")
         write_route_to_geojson(ordered_places_objects, args.output)
         print(f"Route data written to {args.output}")
+        if args.plot:
+            plot_tour(ordered_places_objects, args.plot_output)
         sys.exit(0)
 
     dist_matrix = calculate_distance_matrix(places)
@@ -224,10 +357,24 @@ def main():
     else:
         print("The path will be open (not returning to start).")
 
+    travel_time_matrix = None
+    if args.enforce_time_windows:
+        if args.speed <= 0:
+            print("Error: --speed must be positive if --enforce-time-windows is used.", file=sys.stderr)
+            sys.exit(1)
+        travel_time_matrix = [[(dist / args.speed if args.speed > 0 else float('inf')) for dist in row] for row in dist_matrix]
+        print(f"Time windows will be enforced using an average speed of {args.speed} km/h.")
+        if args.algo != "greedy":
+            print(f"Warning: Time windows are enforced, but algorithm '{args.algo}' is not fully time-window aware. Resulting path may violate time constraints.", file=sys.stderr)
+
 
     if args.algo == "greedy":
         optimal_path_indices, total_distance = solve_tsp_greedy(
-            dist_matrix, start_node_idx, args.must_return_to_start
+            dist_matrix, 
+            start_node_idx, 
+            args.must_return_to_start,
+            places=places if args.enforce_time_windows else None, # Pass places for time windows
+            travel_time_matrix=travel_time_matrix if args.enforce_time_windows else None # Pass time matrix
         )
     elif args.algo == "2opt":
         initial_greedy_path, initial_greedy_distance = solve_tsp_greedy(
@@ -244,7 +391,22 @@ def main():
             initial_path=initial_greedy_path, 
             must_return_to_start=args.must_return_to_start
         )
-    # else: # Placeholder for other algorithms like simulated-annealing
+    elif args.algo == "simulated-annealing":
+        initial_greedy_path, initial_greedy_distance = solve_tsp_greedy(
+            dist_matrix, start_node_idx, args.must_return_to_start
+        )
+        if not initial_greedy_path:
+            print("Error: Could not generate an initial greedy path for Simulated Annealing.", file=sys.stderr)
+            sys.exit(1)
+        
+        print(f"Initial greedy path distance: {initial_greedy_distance:.2f} km. Optimizing with Simulated Annealing...")
+        optimal_path_indices, total_distance = solve_tsp_simulated_annealing(
+            dist_matrix,
+            initial_path=initial_greedy_path,
+            must_return_to_start=args.must_return_to_start
+            # SA specific parameters can be exposed via CLI later if needed (temp, cooling, etc.)
+        )
+    # else: # Placeholder for other algorithms
     #     print(f"Algorithm {args.algo} not yet implemented.", file=sys.stderr)
     #     sys.exit(1)
 
@@ -255,7 +417,7 @@ def main():
     ordered_places_objects = [places[i] for i in optimal_path_indices]
 
     print("\n" + ("-" * 30))
-    print("Optimal tour:" if args.must_return_to_start else "Optimal path:")
+    print("Optimal tour:" if args.must_return_to_start else "Optimal tour:")
     for i, place in enumerate(ordered_places_objects):
         print(f"{i+1}) {place.name}")
     
@@ -263,6 +425,9 @@ def main():
 
     write_route_to_geojson(ordered_places_objects, args.output)
     print(f"Route data appended to or created in {args.output}")
+
+    if args.plot:
+        plot_tour(ordered_places_objects, args.plot_output)
 
 if __name__ == "__main__":
     main() 

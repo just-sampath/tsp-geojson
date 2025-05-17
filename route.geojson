@@ -170,6 +170,154 @@
           ]
         ]
       }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "calculated_at": "2025-05-17T10:26:35.396913",
+        "point_count": 5,
+        "start_place": "Eiffel Tower",
+        "end_place": "Sacr\u00e9-C\u0153ur Basilica"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            2.2945,
+            48.8584
+          ],
+          [
+            2.295,
+            48.8738
+          ],
+          [
+            2.3376,
+            48.8606
+          ],
+          [
+            2.3499,
+            48.853
+          ],
+          [
+            2.3431,
+            48.8867
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "calculated_at": "2025-05-17T10:36:49.982749",
+        "point_count": 6,
+        "start_place": "Notre-Dame Cathedral",
+        "end_place": "Eiffel Tower"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            2.3499,
+            48.853
+          ],
+          [
+            2.3376,
+            48.8606
+          ],
+          [
+            2.3431,
+            48.8867
+          ],
+          [
+            2.295,
+            48.8738
+          ],
+          [
+            2.2945,
+            48.8584
+          ],
+          [
+            2.2945,
+            48.8584
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "calculated_at": "2025-05-17T10:39:01.507992",
+        "point_count": 6,
+        "start_place": "Notre-Dame Cathedral",
+        "end_place": "Eiffel Tower"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            2.3499,
+            48.853
+          ],
+          [
+            2.3376,
+            48.8606
+          ],
+          [
+            2.3431,
+            48.8867
+          ],
+          [
+            2.295,
+            48.8738
+          ],
+          [
+            2.2945,
+            48.8584
+          ],
+          [
+            2.2945,
+            48.8584
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "calculated_at": "2025-05-17T10:40:42.133741",
+        "point_count": 6,
+        "start_place": "Notre-Dame Cathedral",
+        "end_place": "Eiffel Tower"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            2.3499,
+            48.853
+          ],
+          [
+            2.3376,
+            48.8606
+          ],
+          [
+            2.3431,
+            48.8867
+          ],
+          [
+            2.295,
+            48.8738
+          ],
+          [
+            2.2945,
+            48.8584
+          ],
+          [
+            2.2945,
+            48.8584
+          ]
+        ]
+      }
     }
   ]
 }
